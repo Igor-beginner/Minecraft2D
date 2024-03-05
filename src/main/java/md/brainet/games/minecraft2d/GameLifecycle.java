@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 @Component
 public class GameLifecycle extends Thread{
     private final LevelRender levelRender;
-    private int fps = 30;
+    private int fps = 59;
 
     public GameLifecycle(LevelRender levelRender) {
         this.levelRender = levelRender;
@@ -37,9 +37,11 @@ public class GameLifecycle extends Thread{
     }
 
     private void frameRender() throws InterruptedException {
-        levelRender.render();
-        Thread.sleep(1000 / fps);
-        levelRender.clean();
+        long timeBeforeUpdate = System.currentTimeMillis();
+        levelRender.updateFrame();
+        long timeRender = System.currentTimeMillis() - timeBeforeUpdate;
+        int delay = (int)((1000 / fps) - timeRender);
+        Thread.sleep(delay);
     }
 
     public void setFps(int fps) {
