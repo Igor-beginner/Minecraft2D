@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 
 @Component
-public class LevelRender {
+public class LevelRender extends JLabel{
     private final Level level;
     private final GameFrame gameFrame;
     private final СoordinateСonverter coordinateConverter;
@@ -24,52 +24,40 @@ public class LevelRender {
         this.level = level;
         this.gameFrame = gameFrame;
         this.coordinateConverter = coordinateConverter;
+        gameFrame.add(this);
+        setLayout(null);
+        setSize(gameFrame.getSize());
+        setVisible(true);
     }
 
-    public void render(){
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
         Dimension d = gameFrame.getSize();
 
-        Point fLoc = coordinateConverter.toGameCoordinates(new Point(0,(int)d.getHeight()));
+        Point fLoc = coordinateConverter
+                .toGameCoordinates(new Point(0,(int)d.getHeight()));
 
         Point fLocEnd = coordinateConverter
                 .toGameCoordinates(new Point((int)d.getWidth(),0));
 
         Map<Point, Block> blocks = level.getAllBlocks();
-        Set<Point> pointsVisibleForFrame = blocks.keySet()
+        blocks.keySet()
                 .parallelStream()
-                .filter(p -> fLoc.x <= p.x && p.x < fLocEnd.x &&
-                        fLoc.y <= p.y && p.y <= fLocEnd.y)
-                .collect(Collectors.toSet());
-        Map<Point, Block> blocksVisibleForFrame = new HashMap<>();
-        pointsVisibleForFrame
-                .forEach(p -> blocksVisibleForFrame.put(p, blocks.get(p)));
-
-        pushBlocksToFrame(blocksVisibleForFrame);
-        updateFrame();
+                .filter(p -> isVisible(p, fLoc, fLocEnd))
+                .forEach(gp -> {
+                    Point dp = coordinateConverter.toDisplayCoordinates(gp);
+                    g2d.drawImage(blocks.get(gp).texture().getImage(), dp.x, dp.y, Texture.SIZE, Texture.SIZE, this);
+                });
     }
 
-    public void clean(){
-        gameFrame.getContentPane().removeAll();
+    private boolean isVisible(Point curr, Point left, Point right){
+        return left.x <= curr.x && curr.x <= right.x &&
+                left.y <= curr.y && curr.y <= right.y;
     }
 
-    private void pushBlocksToFrame(Map<Point, Block> blocks){
-        blocks.keySet().parallelStream().forEach(blockPosition -> {
-            Block block = blocks.get(blockPosition);
-            gameFrame.add(toJLabel(blockPosition, block.texture()));
-        });
-    }
-
-    private void updateFrame(){
-        gameFrame.revalidate();
-        gameFrame.repaint();
-    }
-
-    private JLabel toJLabel(Point point, Texture texture){
-        point = coordinateConverter.toDisplayCoordinates(point);
-        JLabel jLabel = new JLabel();
-        jLabel.setIcon(texture);
-        jLabel.setLocation(point);
-        jLabel.setSize(texture.getIconWidth(), texture.getIconHeight());
-        return jLabel;
+    public void updateFrame(){
+        revalidate();
+        repaint();
     }
 }
