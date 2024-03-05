@@ -6,7 +6,12 @@ import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -22,8 +27,24 @@ public class LevelRender {
     }
 
     public void render(){
+        Dimension d = gameFrame.getSize();
+
+        Point fLoc = coordinateConverter.toGameCoordinates(new Point(0,(int)d.getHeight()));
+
+        Point fLocEnd = coordinateConverter
+                .toGameCoordinates(new Point((int)d.getWidth(),0));
+
         Map<Point, Block> blocks = level.getAllBlocks();
-        pushBlocksToFrame(blocks);
+        Set<Point> pointsVisibleForFrame = blocks.keySet()
+                .parallelStream()
+                .filter(p -> fLoc.x <= p.x && p.x < fLocEnd.x &&
+                        fLoc.y <= p.y && p.y <= fLocEnd.y)
+                .collect(Collectors.toSet());
+        Map<Point, Block> blocksVisibleForFrame = new HashMap<>();
+        pointsVisibleForFrame
+                .forEach(p -> blocksVisibleForFrame.put(p, blocks.get(p)));
+
+        pushBlocksToFrame(blocksVisibleForFrame);
         updateFrame();
     }
 
