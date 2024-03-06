@@ -31,13 +31,17 @@ public class Time extends Thread{
             while (true) {
                 tick();
                 if (ticks.get() >= DAY_MS) {
-                    days.incrementAndGet();
-                    ticks.set(0);
+                    day();
                 }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void day(){   
+        days.incrementAndGet();
+        ticks.set(0);    
     }
 
     private void tick() throws InterruptedException {
